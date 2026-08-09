@@ -2,6 +2,7 @@
 export { SearchBar } from './SearchBar/index.js';
 export { VideoGrid } from './VideoGrid/index.js';
 export { VideoPlayer } from './VideoPlayer/index.js';
+export { Lightbox } from './Lightbox/index.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type {
@@ -10,4 +11,5 @@ export type {
   VideoPlayerProps,
   UIPlayerStatus,
   SearchBarProps,
+  LightboxProps,
 } from './types.js';

@@ -743,6 +743,104 @@ pre {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   LIGHTBOX
+═══════════════════════════════════════════════════════════════════ */
+
+.media-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  outline: none;
+}
+
+.media-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: fade-in-up 0.2s var(--ease);
+}
+
+.media-lightbox__content {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-lightbox__close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+
+.media-lightbox__close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.08);
+}
+
+.media-lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--t-fast), transform var(--t-fast);
+  z-index: 2;
+}
+
+.media-lightbox__nav--prev { left: -64px; }
+.media-lightbox__nav--next { right: -64px; }
+
+.media-lightbox__nav:hover {
+  background: rgba(124, 58, 237, 0.4);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.media-lightbox__body {
+  width: 100%;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.8), var(--accent-glow);
+}
+
+@media (max-width: 768px) {
+  .media-lightbox__nav--prev { left: 8px; }
+  .media-lightbox__nav--next { right: 8px; }
+  .media-lightbox__close { top: -42px; right: 8px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    ANIMATIONS
 ═══════════════════════════════════════════════════════════════════ */
 

@@ -74,3 +74,16 @@ export interface SearchBarProps {
   onChange?: (value: string) => void;
   className?: string;
 }
+
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
+
+export interface LightboxProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  children?: React.ReactNode;
+  ariaLabel?: string;
+  className?: string;
+}
+
