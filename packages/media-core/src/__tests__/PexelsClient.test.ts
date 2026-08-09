@@ -103,4 +103,53 @@ describe('PexelsClient', () => {
       '[media-core] Pexels API 401: Unauthorized',
     );
   });
+
+  it('serves repeated requests for identical query params from in-memory TTL cache', async () => {
+    const mockResponse: Partial<SearchResult> = { page: 1, videos: [] };
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const res1 = await client.search({ query: 'mountains' });
+    const res2 = await client.search({ query: 'mountains' });
+
+    expect(res1).toEqual(mockResponse);
+    expect(res2).toEqual(mockResponse);
+    // Fetch should only be called ONCE due to cache hit
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('de-duplicates simultaneous in-flight requests for identical keys', async () => {
+    const mockResponse: Partial<SearchResult> = { page: 1, videos: [] };
+    const mockFetch = vi.fn().mockImplementation(
+      () =>
+        new Promise(resolve =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => mockResponse,
+              }),
+            50,
+          ),
+        ),
+    );
+    vi.stubGlobal('fetch', mockFetch);
+
+    // Fire 3 simultaneous identical search requests
+    const [p1, p2, p3] = await Promise.all([
+      client.search({ query: 'forest', page: 1 }),
+      client.search({ query: 'forest', page: 1 }),
+      client.search({ query: 'forest', page: 1 }),
+    ]);
+
+    expect(p1).toEqual(mockResponse);
+    expect(p2).toEqual(mockResponse);
+    expect(p3).toEqual(mockResponse);
+    // Fetch should only be executed ONCE across all 3 promises
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
 });
+
