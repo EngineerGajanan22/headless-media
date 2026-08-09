@@ -1,6 +1,18 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { MediaProvider, useSearch, usePlayer } from '@headless-media/react';
-import { SearchBar, VideoGrid, VideoPlayer } from '@headless-media/ui-react';
+import {
+  MediaProvider,
+  useSearch,
+  usePlayer,
+  useMediaEvents,
+  useMediaContext,
+} from '@headless-media/react';
+import {
+  SearchBar,
+  VideoGrid,
+  VideoPlayer,
+  Lightbox,
+  ReelSwiper,
+} from '@headless-media/ui-react';
 import type { VideoItem } from '@headless-media/ui-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -42,6 +54,15 @@ function MissingKeyScreen() {
  */
 function MediaExplorer() {
   const [query, setQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'reels'>('grid');
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  const { store } = useMediaContext();
+
+  // ── Activity Telemetry Emitter Subscription ───────────────────────────────
+  useMediaEvents(event => {
+    console.log('[demo-app:telemetry]', event.type, event.payload);
+  });
 
   // ── SDK state from @headless-media/react ──────────────────────────────────
   const {
@@ -78,7 +99,6 @@ function MediaExplorer() {
   }, [loadPopular]);
 
   // ── Type mapping: PexelsVideo[] → VideoItem[] ─────────────────────────────
-  // This is the explicit adapter layer — UI knows nothing about PexelsVideo.
   const videoItems = useMemo((): VideoItem[] =>
     results.map(v => ({
       id: v.id,
@@ -91,12 +111,17 @@ function MediaExplorer() {
     [results],
   );
 
-  // ── Resolve best playback URL for the selected video ──────────────────────
+  // ── Current selected index in result set ──────────────────────────────────
+  const selectedIndex = useMemo((): number => {
+    if (videoId == null) return -1;
+    return results.findIndex(v => v.id === videoId);
+  }, [videoId, results]);
+
+  // ── Resolve best playback URL for selected video ──────────────────────────
   const selectedVideoUrl = useMemo((): string | null => {
     if (videoId == null) return null;
     const video = results.find(v => v.id === videoId);
     if (!video) return null;
-    // Prefer HD, fall back to SD, then any available file
     const hd = video.video_files.find(f => f.quality === 'hd');
     const sd = video.video_files.find(f => f.quality === 'sd');
     return hd?.link ?? sd?.link ?? video.video_files[0]?.link ?? null;
@@ -108,11 +133,57 @@ function MediaExplorer() {
     search({ query: q });
   }, [search]);
 
-  const handleSelect = useCallback((id: number) => {
+  const handleGridSelect = useCallback((id: number) => {
     selectVideo(id);
-    // Optimistically mark as playing — VideoPlayer will retry on canplay
     setPlaying();
+    setIsLightboxOpen(true);
   }, [selectVideo, setPlaying]);
+
+  const handleCloseLightbox = useCallback(() => {
+    setIsLightboxOpen(false);
+    setPaused();
+  }, [setPaused]);
+
+  const handlePreviousVideo = useCallback(() => {
+    if (selectedIndex > 0 && results[selectedIndex - 1]) {
+      const prevVideo = results[selectedIndex - 1];
+      if (prevVideo) {
+        selectVideo(prevVideo.id);
+        setPlaying();
+      }
+    }
+  }, [selectedIndex, results, selectVideo, setPlaying]);
+
+  const handleNextVideo = useCallback(() => {
+    if (selectedIndex < results.length - 1 && results[selectedIndex + 1]) {
+      const nextVideo = results[selectedIndex + 1];
+      if (nextVideo) {
+        selectVideo(nextVideo.id);
+        setPlaying();
+      }
+    }
+  }, [selectedIndex, results, selectVideo, setPlaying]);
+
+  const handleDownload = useCallback((id: number) => {
+    const video = results.find(v => v.id === id);
+    if (!video) return;
+    const file = video.video_files.find(f => f.quality === 'hd') ?? video.video_files[0];
+    if (!file) return;
+
+    // Emits activity event via MediaEmitter in media-core
+    store.recordDownload(id, file.quality, file.link);
+
+    // Open video download URL in new tab
+    window.open(file.link, '_blank');
+  }, [results, store]);
+
+  const handleReelActiveChange = useCallback((index: number) => {
+    const video = results[index];
+    if (video) {
+      selectVideo(video.id);
+      setPlaying();
+    }
+  }, [results, selectVideo, setPlaying]);
 
   const handleEnded = useCallback(() => {
     setPaused();
@@ -129,7 +200,6 @@ function MediaExplorer() {
           <span className="app__logo-text">Headless Media</span>
         </a>
 
-        {/* Wall demonstrated: SearchBar imported from ui-react, knows nothing about Pexels */}
         <SearchBar
           value={query}
           isLoading={isLoading}
@@ -137,12 +207,104 @@ function MediaExplorer() {
           onSearch={handleSearch}
           onChange={setQuery}
         />
+
+        {/* View Mode Switcher */}
+        <div className="app__view-toggle" role="group" aria-label="View mode">
+          <button
+            type="button"
+            className={`view-toggle-btn${viewMode === 'grid' ? ' view-toggle-btn--active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            aria-pressed={viewMode === 'grid'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span>Grid</span>
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-btn${viewMode === 'reels' ? ' view-toggle-btn--active' : ''}`}
+            onClick={() => setViewMode('reels')}
+            aria-pressed={viewMode === 'reels'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="6" y="2" width="12" height="20" rx="2" ry="2" />
+              <line x1="12" y1="18" x2="12.01" y2="18" />
+            </svg>
+            <span>Reels</span>
+          </button>
+        </div>
       </header>
 
       <main className="app__main">
-        {/* ── Player (only when a video is selected) ── */}
-        {videoId != null && (
-          <section className="app__player-section" aria-label="Video player">
+        {searchError && (
+          <div className="app__search-error" role="alert">
+            <span aria-hidden="true">⚠️</span> {searchError}
+          </div>
+        )}
+
+        {viewMode === 'grid' ? (
+          <section className="app__grid-section">
+            <VideoGrid
+              videos={videoItems}
+              selectedId={videoId}
+              isLoading={isLoading}
+              hasMore={hasNextPage}
+              onSelect={handleGridSelect}
+              onLoadMore={loadMore}
+            />
+          </section>
+        ) : (
+          <section className="app__reels-section">
+            <ReelSwiper
+              items={results}
+              onActiveChange={handleReelActiveChange}
+              renderItem={(video, isActive) => {
+                const hd = video.video_files.find(f => f.quality === 'hd');
+                const url = hd?.link ?? video.video_files[0]?.link ?? null;
+                const isThisSelected = videoId === video.id;
+
+                return (
+                  <div className="reel-swiper__card">
+                    <VideoPlayer
+                      videoUrl={url}
+                      isPlaying={isActive && isThisSelected && status === 'playing'}
+                      isMuted={muted}
+                      volume={volume}
+                      currentTime={isThisSelected ? currentTime : 0}
+                      duration={isThisSelected ? duration : video.duration}
+                      status={isThisSelected ? status : 'idle'}
+                      error={isThisSelected ? playerError : null}
+                      onPlay={setPlaying}
+                      onPause={setPaused}
+                      onTimeUpdate={setCurrentTime}
+                      onDurationChange={setDuration}
+                      onVolumeChange={setVolume}
+                      onMuteToggle={toggleMute}
+                      onEnded={handleEnded}
+                      onError={setError}
+                    />
+                  </div>
+                );
+              }}
+            />
+          </section>
+        )}
+      </main>
+
+      {/* ── Lightbox (Grid selection popover) ── */}
+      <Lightbox
+        isOpen={isLightboxOpen}
+        onClose={handleCloseLightbox}
+        onPrevious={selectedIndex > 0 ? handlePreviousVideo : undefined}
+        onNext={selectedIndex < results.length - 1 ? handleNextVideo : undefined}
+        ariaLabel="Video detail view"
+      >
+        {videoId != null && selectedVideoUrl && (
+          <div className="lightbox-player-wrap">
             <VideoPlayer
               videoUrl={selectedVideoUrl}
               isPlaying={status === 'playing'}
@@ -161,27 +323,26 @@ function MediaExplorer() {
               onEnded={handleEnded}
               onError={setError}
             />
-          </section>
-        )}
-
-        {/* ── Video grid ── */}
-        <section className="app__grid-section">
-          {searchError && (
-            <div className="app__search-error" role="alert">
-              <span aria-hidden="true">⚠️</span> {searchError}
+            <div className="media-lightbox__actions">
+              <span className="media-lightbox__meta">
+                Video #{videoId}
+              </span>
+              <button
+                type="button"
+                className="media-lightbox__download-btn"
+                onClick={() => handleDownload(videoId)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                <span>Download Video</span>
+              </button>
             </div>
-          )}
-
-          <VideoGrid
-            videos={videoItems}
-            selectedId={videoId}
-            isLoading={isLoading}
-            hasMore={hasNextPage}
-            onSelect={handleSelect}
-            onLoadMore={loadMore}
-          />
-        </section>
-      </main>
+          </div>
+        )}
+      </Lightbox>
 
       <footer className="app__footer">
         <p>

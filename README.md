@@ -78,10 +78,12 @@ To deliver a production-quality foundation under time constraints, features were
 | Feature Area | Status | Rationale |
 |---|---|---|
 | **Video Search & Playback** | Implemented | Core requirement; focused on rich state management and playback controls. |
+| **Activity Telemetry (`MediaEmitter`)** | Implemented | Separate event emitter (`MediaEmitter`, `useMediaEvents`) tracking `view` and `download` actions. |
+| **Headless Lightbox Modal** | Implemented | Accessible modal (`<Lightbox>`) with focus trapping, restore-focus, and keyboard navigation. |
+| **Vertical Reel Swiper** | Implemented | `<ReelSwiper>` with CSS snap-scrolling and `IntersectionObserver` active item detection. |
 | **Photo Search & Galleries** | Scoped Out | Excluded to keep the state machine simple and focused on video stream lifecycle. |
 | **Web Platform Target** | Implemented | Fully functional Vite + React web application (`demo-web`). |
 | **React Native Support** | Scoped Out (Stubs) | `media-native` and `media-ui-native` are structured as architectural stubs to demonstrate contract compatibility without introducing native build overhead. |
-| **Lightbox / Reel Swiper** | Scoped Out | Scoped out to prioritize clean package boundaries and core component quality (`VideoGrid`, `VideoPlayer`). |
 
 ---
 

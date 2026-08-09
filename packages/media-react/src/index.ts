@@ -6,6 +6,7 @@ export { useSearch } from './hooks/useSearch.js';
 export { usePlayer } from './hooks/usePlayer.js';
 export { useVideo } from './hooks/useVideo.js';
 export { useMediaEvents } from './hooks/useMediaEvents.js';
+export { useMediaContext } from './context.js';
 
 // ─── Prop types ───────────────────────────────────────────────────────────────
 export type { MediaProviderProps } from './MediaProvider.js';

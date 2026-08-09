@@ -87,3 +87,13 @@ export interface LightboxProps {
   className?: string;
 }
 
+// ─── ReelSwiper ───────────────────────────────────────────────────────────────
+
+export interface ReelSwiperProps<T> {
+  items: T[];
+  renderItem: (item: T, isActive: boolean, index: number) => React.ReactNode;
+  onActiveChange?: (index: number) => void;
+  className?: string;
+}
+
+
