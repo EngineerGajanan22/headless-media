@@ -5,6 +5,7 @@ export { MediaProvider } from './MediaProvider.js';
 export { useSearch } from './hooks/useSearch.js';
 export { usePlayer } from './hooks/usePlayer.js';
 export { useVideo } from './hooks/useVideo.js';
+export { useMediaEvents } from './hooks/useMediaEvents.js';
 
 // ─── Prop types ───────────────────────────────────────────────────────────────
 export type { MediaProviderProps } from './MediaProvider.js';
@@ -23,4 +24,10 @@ export type {
   PexelsUser,
   VideoFile,
   SearchResult,
+  MediaEvent,
+  MediaEventType,
+  MediaEventMap,
+  MediaEventHandler,
+  DownloadEventPayload,
+  ViewEventPayload,
 } from '@headless-media/core';

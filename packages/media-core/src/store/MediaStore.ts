@@ -1,4 +1,5 @@
 import { Observable } from './observable.js';
+import { MediaEmitter } from '../events/MediaEmitter.js';
 import type { PexelsClient } from '../client/PexelsClient.js';
 import type {
   MediaState,
@@ -38,14 +39,17 @@ const INITIAL_STATE: MediaState = {
  * - Framework wrappers (media-react, media-native) subscribe to `state$`
  *   and expose actions as hooks/context — they add zero business logic.
  * - Uses `Observable<MediaState>` for reactive updates.
+ * - Exposes `events` (MediaEmitter) for activity telemetries (views, downloads).
  */
 export class MediaStore {
   readonly state$: Observable<MediaState>;
+  readonly events: MediaEmitter;
   private readonly client: PexelsClient;
   private _searchAbort: AbortController | null = null;
 
-  constructor(client: PexelsClient) {
+  constructor(client: PexelsClient, events?: MediaEmitter) {
     this.client = client;
+    this.events = events ?? new MediaEmitter();
     this.state$ = new Observable<MediaState>(INITIAL_STATE);
   }
 
@@ -160,6 +164,11 @@ export class MediaStore {
       duration: 0,
       error: null,
     });
+    this.events.emit('view', { videoId: id, timestamp: Date.now() });
+  }
+
+  recordDownload(videoId: number, quality: string, url: string): void {
+    this.events.emit('download', { videoId, quality, url });
   }
 
   setPlayerStatus(status: PlayerStatus): void {
