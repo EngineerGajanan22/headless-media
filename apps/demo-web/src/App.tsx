@@ -15,9 +15,30 @@ import {
 } from '@headless-media/ui-react';
 import type { VideoItem } from '@headless-media/ui-react';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants & Data ─────────────────────────────────────────────────────────
 
 const API_KEY = import.meta.env['VITE_PEXELS_API_KEY'] as string | undefined;
+
+const QUICK_CATEGORIES = ['Popular', 'Nature', 'Ocean', 'Cyberpunk', 'Aerial', 'Abstract', 'City'];
+
+// ─── Logo Component ───────────────────────────────────────────────────────────
+
+function LogoIcon() {
+  return (
+    <svg width="34" height="34" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="app__logo-svg">
+      <rect width="32" height="32" rx="10" fill="url(#logo_grad)" />
+      <path d="M12.5 9.5L22.5 16L12.5 22.5V9.5Z" fill="white" />
+      <rect x="0.5" y="0.5" width="31" height="31" rx="9.5" stroke="white" strokeOpacity="0.3" />
+      <defs>
+        <linearGradient id="logo_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#8B5CF6" />
+          <stop offset="0.5" stopColor="#6366F1" />
+          <stop offset="1" stopColor="#3B82F6" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
 
 // ─── API key guard ────────────────────────────────────────────────────────────
 
@@ -54,6 +75,7 @@ function MissingKeyScreen() {
  */
 function MediaExplorer() {
   const [query, setQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('Popular');
   const [viewMode, setViewMode] = useState<'grid' | 'reels'>('grid');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
@@ -130,8 +152,20 @@ function MediaExplorer() {
   // ── Event handlers ────────────────────────────────────────────────────────
 
   const handleSearch = useCallback((q: string) => {
+    setQuery(q);
+    setActiveCategory('');
     search({ query: q });
   }, [search]);
+
+  const handleCategoryClick = useCallback((category: string) => {
+    setActiveCategory(category);
+    setQuery('');
+    if (category === 'Popular') {
+      void loadPopular();
+    } else {
+      search({ query: category.toLowerCase() });
+    }
+  }, [loadPopular, search]);
 
   const handleGridSelect = useCallback((id: number) => {
     selectVideo(id);
@@ -170,10 +204,7 @@ function MediaExplorer() {
     const file = video.video_files.find(f => f.quality === 'hd') ?? video.video_files[0];
     if (!file) return;
 
-    // Emits activity event via MediaEmitter in media-core
     store.recordDownload(id, file.quality, file.link);
-
-    // Open video download URL in new tab
     window.open(file.link, '_blank');
   }, [results, store]);
 
@@ -193,17 +224,25 @@ function MediaExplorer() {
 
   return (
     <div className="app">
+      {/* Background ambient lighting orbs */}
+      <div className="app__bg-orb app__bg-orb--1" aria-hidden="true" />
+      <div className="app__bg-orb app__bg-orb--2" aria-hidden="true" />
+      <div className="app__bg-orb app__bg-orb--3" aria-hidden="true" />
+
       {/* ── Header ── */}
       <header className="app__header">
         <a href="/" className="app__logo" aria-label="Headless Media home">
-          <div className="app__logo-icon" aria-hidden="true">🎬</div>
-          <span className="app__logo-text">Headless Media</span>
+          <LogoIcon />
+          <span className="app__logo-text">
+            <span className="app__logo-text-bold">Headless</span>
+            <span className="app__logo-text-accent">Media</span>
+          </span>
         </a>
 
         <SearchBar
           value={query}
           isLoading={isLoading}
-          placeholder="Search Pexels videos…"
+          placeholder="Search HD videos on Pexels…"
           onSearch={handleSearch}
           onChange={setQuery}
         />
@@ -217,10 +256,10 @@ function MediaExplorer() {
             aria-pressed={viewMode === 'grid'}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
             </svg>
             <span>Grid</span>
           </button>
@@ -231,13 +270,29 @@ function MediaExplorer() {
             aria-pressed={viewMode === 'reels'}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="6" y="2" width="12" height="20" rx="2" ry="2" />
-              <line x1="12" y1="18" x2="12.01" y2="18" />
+              <rect x="6" y="2" width="12" height="20" rx="3" ry="3" />
+              <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="3" />
             </svg>
             <span>Reels</span>
           </button>
         </div>
       </header>
+
+      {/* ── Subheader Hero / Categories ── */}
+      <div className="app__subheader">
+        <div className="app__categories">
+          {QUICK_CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              type="button"
+              className={`category-chip${activeCategory === cat ? ' category-chip--active' : ''}`}
+              onClick={() => handleCategoryClick(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <main className="app__main">
         {searchError && (
@@ -346,9 +401,8 @@ function MediaExplorer() {
 
       <footer className="app__footer">
         <p>
-          Built with <strong>Headless Media SDK</strong> ·{' '}
-          Videos by{' '}
-          <a href="https://pexels.com" target="_blank" rel="noreferrer">Pexels</a>
+          Built with <strong>Headless Media SDK</strong> · Powered by{' '}
+          <a href="https://pexels.com" target="_blank" rel="noreferrer">Pexels API</a>
         </p>
       </footer>
     </div>
