@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "turbo run build --filter=@headless-media/demo-web",
+  "outputDirectory": "apps/demo-web/dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

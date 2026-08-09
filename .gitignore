@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.turbo/
+
+# Environment — never commit real keys
+.env
+.env.local
+*.env.local
+
+# Keep the example committed
+!.env.example
+
+coverage/
+.DS_Store
+Thumbs.db
+*.log
+
