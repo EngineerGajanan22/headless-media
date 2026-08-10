@@ -1,0 +1,18 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "packages/media-core/src/index.ts",
+    "packages/media-react/src/index.ts"
+  ],
+  "entryPointStrategy": "resolve",
+  "out": "apps/sdk-docs",
+  "name": "Headless Media SDK",
+  "includeVersion": true,
+  "tsconfig": "tsconfig.docs.json",
+  "exclude": [
+    "packages/**/*.test.ts",
+    "packages/**/*.test.tsx",
+    "packages/**/__tests__/**/*"
+  ],
+  "cleanOutputDir": true
+}

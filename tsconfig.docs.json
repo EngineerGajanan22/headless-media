@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "skipLibCheck": true
+  },
+  "include": [
+    "packages/media-core/src/**/*",
+    "packages/media-react/src/**/*"
+  ],
+  "exclude": [
+    "packages/**/*.test.ts",
+    "packages/**/*.test.tsx",
+    "packages/**/__tests__/**/*",
+    "packages/media-ui-react/**/*",
+    "packages/media-ui-native/**/*",
+    "packages/media-native/**/*",
+    "apps/**/*"
+  ]
+}
